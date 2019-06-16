@@ -1,0 +1,3 @@
+#Ingnore these files and directories
+.env
+/node_modules/*
