@@ -109,7 +109,70 @@ module.exports = function (app) {
       
     }
   })
-
+  .delete(function(req, res) {
+   //I  hate being callbacked so many times!
+    if(req.body.thread_id && req.body.delete_password) {
+      dbConnect((db) => {
+        var cllctn = db.collection(req.params.board);
+        cllctn.findOne({_id: new ObjectId(req.body.thread_id)},
+        {fields: {
+          delete_password: 1,
+          _id: 1
+        }},
+        function(err, doc) {
+          if(err || !doc) {
+            console.error(err);
+            res.status(500)
+            .send({error: `Could not find  thread with _id ${req.body.thread_id}`})
+          }
+          else if(doc) {
+            bCrypt.compare(req.body.delete_password, doc.delete_password, 
+            function(err, authenticated) {
+              if (err || !authenticated) {
+                console.error(err);
+                res.status(500).send({error: "there was an error authenticating your password"})
+              }
+              else if(authenticated) {
+                 cllctn.remove({_id: ObjectId(req.body.thread_id)}, 
+                 function(err, rDocs) {
+                if(err || rDocs < 1) {
+                 console.error(err);
+                 res.status(500).send({error: "Could not remove selected thread"})
+              } else {
+               res.send({message: `Successfully deleted thread with _id ${req.body.thread_id}`})
+             }
+            });
+              } 
+            })
+           
+        
+          }
+        })
+        
+      })
+    }
+    else {
+      res.status(400)
+      .send({error: "Must include thread_id  and delete_password in request body"})
+    }
+  })
+  .put(function(req, res) {
+    if(req.body.thread_id) {
+      dbConnect((db) => {
+        db.collection(req.params.board)
+        .update({_id: ObjectId(req.body.thread_id)}, {reported: true}, function(err, updateResult) {
+          if(err) {
+            console.error(err) 
+          }
+          res.send(`Reported thread with _id ${req.body.thread_id}`)
+        })
+      })
+    }
+    else {
+      res.status(400).send("Must provide thread_id in search query")
+    }
+  });
+  
   app.route('/api/replies/:board')
   .post(function(req, res) {
     //if all fields in req.body
@@ -128,7 +191,8 @@ module.exports = function (app) {
       bCrypt.hash(req.body.delete_password, 10, function(err, hash) {
         if(err) console.error(err);
         replyData.delete_password = hash;
-        cllctn.update({_id: ObjectId(req.body.thread_id.slice(-24))}, {$push: {replies: replyData}}, {},
+        cllctn.update({_id: ObjectId(req.body.thread_id)}, 
+        {$push: {replies: replyData}, $set: {bumped_on: getStringDate()}}, {},
         function(err, doc) {
           if(err) {
             console.error(err);
@@ -171,6 +235,68 @@ module.exports = function (app) {
     else {
       res.status(500).send({error: "Must provide thread_id to get thread replies"})
     }
-  });
-
+  })
+  .delete(function(req, res) {
+    var board = req.params.board;
+    if(req.body.thread_id && req.body.reply_id && req.body.delete_password) {
+      dbConnect((db) => {
+        var cllctn = db.collection(board);
+        cllctn.findOne({_id: ObjectId(req.body.thread_id)},
+        { 
+          fields: {
+          replies: {$elemMatch:{ _id: ObjectId(req.body.reply_id)}}
+          }
+          
+        },
+        function(err, doc) {
+          if(err || !doc) {
+            console.error(err);
+            res.send("Could not find thread with provided thread_id")
+          }
+          else  {
+            bCrypt.compare(req.body.delete_password, doc.replies[0].delete_password, function(err, isAuth) {
+              if(err || !isAuth) {
+                console.error(err);
+                res.status(400).send("Password authentication failed");
+              }
+              if(isAuth) {
+                //Having trouble getting thread reply from replies array with correct _id and updating it
+                
+                cllctn.update({
+                  _id: ObjectId(req.body.thread_id),
+                  "replies._id": ObjectId(req.body.reply_id)
+                  
+                },
+                {
+                  $set: {
+                    "replies.$.text": "[deleted]"}
+                  
+                }, 
+                { w: 2},
+                function(err, uRes) {
+                  if (err) {
+                    console.error(err);
+                    res.status(500).send("Could not delete reply")
+                  }
+                  console.log(uRes)
+                  res.send("Sucessfully deleted thread comment")
+                 
+                })
+              }
+              })
+            
+            
+          }
+        })
+      })
+    }
+    
+    else {
+      res.send("missing some fields")
+    }
+  })
+  .put();
 };
+
+//insecure DATABASE=mongodb://user1:secret1@ds143326.mlab.com:43326/messageboardbasic
+

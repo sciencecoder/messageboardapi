@@ -10,7 +10,9 @@ var chaiHttp = require('chai-http');
 var chai = require('chai');
 var assert = chai.assert;
 var server = require('../server');
-
+var dbConnect = function(callback) {
+  
+}
 chai.use(chaiHttp);
 
 suite('Functional Tests', function() {
