@@ -130,7 +130,7 @@ module.exports = function (app) {
             function(err, authenticated) {
               if (err || !authenticated) {
                 console.error(err);
-                res.status(500).send({error: "there was an error authenticating your password"})
+                res.status(500).send("Incorrect password")
               }
               else if(authenticated) {
                  cllctn.remove({_id: ObjectId(req.body.thread_id)}, 
@@ -139,7 +139,7 @@ module.exports = function (app) {
                  console.error(err);
                  res.status(500).send({error: "Could not remove selected thread"})
               } else {
-               res.send({message: `Successfully deleted thread with _id ${req.body.thread_id}`})
+               res.send("Success")
              }
             });
               } 
@@ -164,7 +164,7 @@ module.exports = function (app) {
           if(err) {
             console.error(err) 
           }
-          res.send(`Reported thread with _id ${req.body.thread_id}`);
+          res.send("Success");
           db.close();
         })
       })
@@ -258,7 +258,7 @@ module.exports = function (app) {
             bCrypt.compare(req.body.delete_password, doc.replies[0].delete_password, function(err, isAuth) {
               if(err || !isAuth) {
                 console.error(err);
-                res.status(400).send("Password authentication failed");
+                res.status(400).send("Incorrect password");
               }
               if(isAuth) {
                 //Having trouble getting thread reply from replies array with correct _id and updating it
@@ -279,7 +279,7 @@ module.exports = function (app) {
                     console.error(err);
                     res.status(500).send("Could not delete reply")
                   }
-                  res.send("Sucessfully deleted thread comment")
+                  res.send("Sucess")
                  
                 })
               }
@@ -292,7 +292,7 @@ module.exports = function (app) {
     }
     
     else {
-      res.send("missing some fields")
+      res.send("missing some fields");
     }
   })
   .put(function(req, res) {
