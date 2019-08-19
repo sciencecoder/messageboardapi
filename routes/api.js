@@ -111,7 +111,7 @@ module.exports = function (app) {
   })
   .delete(function(req, res) {
    //I  hate being callbacked so many times!
-    if(req.body.thread_id && req.body.delete_password) {
+    if(req.body.thread_id && req.body.thread_id.length == 24 && req.body.delete_password) {
       dbConnect((db) => {
         var cllctn = db.collection(req.params.board);
         cllctn.findOne({_id: new ObjectId(req.body.thread_id)},
@@ -160,11 +160,12 @@ module.exports = function (app) {
     if(req.body.thread_id) {
       dbConnect((db) => {
         db.collection(req.params.board)
-        .update({_id: ObjectId(req.body.thread_id)}, {reported: true}, function(err, updateResult) {
+        .update({_id: ObjectId(req.body.thread_id)}, {$set: {reported: true}}, function(err, updateResult) {
           if(err) {
             console.error(err) 
           }
-          res.send(`Reported thread with _id ${req.body.thread_id}`)
+          res.send(`Reported thread with _id ${req.body.thread_id}`);
+          db.close();
         })
       })
     }
@@ -278,7 +279,6 @@ module.exports = function (app) {
                     console.error(err);
                     res.status(500).send("Could not delete reply")
                   }
-                  console.log(uRes)
                   res.send("Sucessfully deleted thread comment")
                  
                 })
@@ -295,8 +295,22 @@ module.exports = function (app) {
       res.send("missing some fields")
     }
   })
-  .put();
-};
+  .put(function(req, res) {
 
-//insecure DATABASE=mongodb://user1:secret1@ds143326.mlab.com:43326/messageboardbasic
+    if(req.body.thread_id && req.body.reply_id && req.body.thread_id.length == 24 && req.body.reply_id.length==24) {
+      dbConnect((db) => {
+        db.collection(req.params.board)
+        .update({_id: ObjectId(req.body.thread_id), "replies._id": ObjectId(req.body.reply_id)},
+         {$set: {"replies.$.reported": true}}, function(err, updateResult) {
+           if(err) {
+             res.send("error")
+           } else {
+            res.send("Success");
+
+           }
+        })
+      })
+    }
+  });
+};
 
