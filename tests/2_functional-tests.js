@@ -25,28 +25,46 @@ function dbConnect(callback) {
 }
 
 suite('Functional Tests', function() {
-
-  suite('API ROUTING FOR /api/threads/:board', function() {
+    var init_thread_id;
+    var test_thread_id;
+    var init_reply_id;
+    var test_reply_id;
     before(function(done) {
       chai.request(server)
         .post("/api/threads/board1")
         .send({
-          "text": "Example thread",
-          "delete_password": "secret"
+          "text": "Init thread",
+          "delete_password": "password"
         })
         .end(function(err, res) {
-          console.log("Setup data", res.body);
-          //assert.isArray(res.body, "res.body should be an Array");
-         
+          
+          assert.isArray(res.body, "res.body should be an Array");
+          if(res.body.error) {
+            init_thread_id = res.body.data._id
+          } else {
+            init_thread_id = res.body._id
+          }
+          chai.request(server)
+          .post("api/replies/board1")
+          .send({
+          "text": "Init reply",
+          "delete_password": "password"
+          })
           done();
         })
     })
+  suite('API ROUTING FOR /api/threads/:board', function() {
+   
     suite('POST', function() {
       test("POST to /api/threads/{board}", function(done) {
         chai.request(server)
-        .get("/api/threads/board1")
+        .post("/api/threads/board1")
+        .send({
+          "text": "Testing thread",
+          "delete_password": "password"
+        })
         .end(function(err, res) {
-          //console.log(res.body);
+          console.log("POSt request",res.body);
           assert.isArray(res.body, "res.body should be an Array");
 
           done();
@@ -55,44 +73,44 @@ suite('Functional Tests', function() {
       
     });
     
-    // suite('GET', function() {
-    //    test("POST to /api/threads/{board}", function(done) {
-    //     chai.request(server)
-    //     .get("/api/threads/board1")
-    //     .end(function(err, res) {
-    //       console.log(res.body);
-    //       assert.isArray(res.body, "res.body should be an Array");
+    suite('GET', function() {
+       test("GET to /api/threads/{board}", function(done) {
+        chai.request(server)
+        .get("/api/threads/board1")
+        .end(function(err, res) {
+          console.log(res.body);
+          assert.isArray(res.body, "res.body should be an Array");
           
-    //       done();
-    //     })
-    //   })
-    // });
+          done();
+        })
+      })
+    });
     
-    // suite('DELETE', function() {
-    //   test("POST to /api/threads/{board}", function(done) {
-    //     chai.request(server)
-    //     .get("/api/threads/board1")
-    //     .end(function(err, res) {
-    //       console.log(res.body);
-    //       assert.isArray(res.body, "res.body should be an Array");
+    suite('DELETE', function() {
+      test("DELETE to /api/threads/{board}", function(done) {
+        chai.request(server)
+        .delete("/api/threads/board1")
+        .end(function(err, res) {
+          console.log(res.body);
+          assert.isArray(res.body, "res.body should be an Array");
           
-    //       done();
-    //     })
-    //   })
-    // });
+          done();
+        })
+      })
+    });
     
-    // suite('PUT', function() {
-    //   test("POST to /api/threads/{board}", function(done) {
-    //     chai.request(server)
-    //     .get("/api/threads/board1")
-    //     .end(function(err, res) {
-    //       console.log(res.body);
-    //       assert.isArray(res.body, "res.body should be an Array");
+    suite('PUT', function() {
+      test("PUT to /api/threads/{board}", function(done) {
+        chai.request(server)
+        .put("/api/threads/board1")
+        .end(function(err, res) {
+          console.log(res.body);
+          assert.isArray(res.body, "res.body should be an Array");
           
-    //       done();
-    //     })
-    //   })
-    // });
+          done();
+        })
+      })
+    });
     
 
   });

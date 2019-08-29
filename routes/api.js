@@ -63,7 +63,7 @@ module.exports = function (app) {
          
       if(doc) {
         
-        res.status(400).send({error: "Thread already exists", thread: doc.text});
+        res.status(400).send({error: "Thread already exists", data: doc});
         
       } else {
         
