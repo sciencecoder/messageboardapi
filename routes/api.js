@@ -16,7 +16,7 @@ require("dotenv").config();
 function dbConnect(callback) {
   MongoClient.connect(process.env.DATABASE, function(err, db) {
     if(err) console.error(err);
-    console.log("connected to DB")
+    console.log("connected to DB");
    return callback(db);
   })
 }
