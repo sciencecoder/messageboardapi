@@ -16,7 +16,7 @@ require("dotenv").config();
 function dbConnect(callback) {
   MongoClient.connect(process.env.DATABASE, function(err, db) {
     if(err) console.error(err);
-    console.log("connected to DB");
+    //console.log("connected to DB");
    return callback(db);
   })
 }
@@ -92,6 +92,7 @@ module.exports = function (app) {
   })
   .get(function(req, res) {
     var board = req.params.board;
+    
     if(true) {
       dbConnect((db)=> {
         var cllctn = db.collection(board);
@@ -110,7 +111,9 @@ module.exports = function (app) {
     }
   })
   .delete(function(req, res) {
+   
    //I  hate being callbacked so many times!
+   
     if(req.body.thread_id && req.body.thread_id.length == 24 && req.body.delete_password) {
       dbConnect((db) => {
         var cllctn = db.collection(req.params.board);
@@ -139,7 +142,7 @@ module.exports = function (app) {
                  console.error(err);
                  res.status(500).send({error: "Could not remove selected thread"})
               } else {
-               res.send("Success")
+               res.send(true)
              }
             });
               } 
@@ -164,7 +167,7 @@ module.exports = function (app) {
           if(err) {
             console.error(err) 
           }
-          res.send("Success");
+          res.send("success");
           db.close();
         })
       })
@@ -199,12 +202,31 @@ module.exports = function (app) {
             console.error(err);
             res.send({error: "Could not add reply to thread"})
           }
-          res.send( {meesage: "Added reply to thread"});
+          //res.send( {message: "Added reply to thread"});
+
+
+
+   cllctn.find({_id: ObjectId(req.body.thread_id), "replies.text": replyData.text}, {"replies.$": 1}).toArray( function(sick, docs) {
+    //anthropomorphic error handling :)
+    function up() {
+      return sick;
+    }
+
+    if(sick) throw up();
+    console.log(`line 216 api.js: `, `Added reply to thread re: ${docs[0].text}`)
+    res.send(docs[0]);
+
+    
+  })
+
+
+
         })
       })
     })
     } 
     else {
+      console.log(req.body)
       res.status(400)
       .send({error: "Missing fields in request body. Must include fields: delete_password, text, thread_id"})
     }
@@ -296,8 +318,9 @@ module.exports = function (app) {
     }
   })
   .put(function(req, res) {
+  
 
-    if(req.body.thread_id && req.body.reply_id && req.body.thread_id.length == 24 && req.body.reply_id.length==24) {
+    if(req.body.thread_id && req.body.reply_id) {
       dbConnect((db) => {
         db.collection(req.params.board)
         .update({_id: ObjectId(req.body.thread_id), "replies._id": ObjectId(req.body.reply_id)},
@@ -310,6 +333,8 @@ module.exports = function (app) {
            }
         })
       })
+    } else {
+      res.send(false)
     }
   });
 };
